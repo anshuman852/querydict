@@ -1,4 +1,8 @@
-# lucene-dict-matcher - match Python dictionaries against Lucene queries
+# lucene-dict-matcher
+
+[![Build Status](https://travis-ci.org/edeca/lucene-dict-matcher.svg?branch=master)](https://travis-ci.org/edeca/lucene-dict-matcher)
+
+Easily match data in Python dictionaries against Lucene queries.
 
 This library takes a Lucene syntax query and matches against Python dictionaries, returning `True` or `False`.
 It is designed to allow selection of records that match user queries, for example in a streaming system where
