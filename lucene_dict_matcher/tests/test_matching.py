@@ -21,18 +21,37 @@ def test_missing_nested():
 
 
 def test_simple_and():
-    assert QueryEngine("key1:value1 AND key2:value2", short_circuit=True).match(SIMPLE_DATA) is True
+    assert (
+        QueryEngine("key1:value1 AND key2:value2", short_circuit=True).match(
+            SIMPLE_DATA
+        )
+        is True
+    )
 
 
 def test_impossible_and():
     """ Test a condition that can never be true """
-    assert QueryEngine("key1:value1 AND key1:value2", short_circuit=True).match(SIMPLE_DATA) is False
-    assert QueryEngine("key1:value1 AND key1:value2", short_circuit=False).match(SIMPLE_DATA) is False
+    assert (
+        QueryEngine("key1:value1 AND key1:value2", short_circuit=True).match(
+            SIMPLE_DATA
+        )
+        is False
+    )
+    assert (
+        QueryEngine("key1:value1 AND key1:value2", short_circuit=False).match(
+            SIMPLE_DATA
+        )
+        is False
+    )
 
 
 def test_simple_or():
-    assert QueryEngine("key1:value1 OR key2:value2", short_circuit=True).match(SIMPLE_DATA)
-    assert QueryEngine("key1:value1 OR key2:value2", short_circuit=False).match(SIMPLE_DATA)
+    assert QueryEngine("key1:value1 OR key2:value2", short_circuit=True).match(
+        SIMPLE_DATA
+    )
+    assert QueryEngine("key1:value1 OR key2:value2", short_circuit=False).match(
+        SIMPLE_DATA
+    )
 
 
 def test_grouped_or():
@@ -48,6 +67,11 @@ def test_nested():
 def test_ambiguous_and():
     """ Ensure the default action for ambiguous queries is AND """
     assert QueryEngine("key1:value1 key2:value2").match(SIMPLE_DATA)
+
+
+def test_not():
+    """ Check that NOT queries perform correctly """
+    assert QueryEngine("key1:value1 AND NOT key2:value1").match(SIMPLE_DATA)
 
 
 def test_default_field():

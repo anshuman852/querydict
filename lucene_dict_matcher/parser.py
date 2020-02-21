@@ -10,6 +10,7 @@ from luqum.tree import (
     Fuzzy,
     UnknownOperation,
     Range,
+    Not,
 )
 from luqum.utils import UnknownOperationResolver
 
@@ -27,7 +28,7 @@ class QueryEngine:
     Match a Lucene query against dict data, using an abstract tree parser.
     """
 
-    supported_ops = [AndOperation, OrOperation, Group, SearchField, Word, Phrase]
+    supported_ops = [AndOperation, OrOperation, Group, SearchField, Word, Phrase, Not]
     ambiguous_actions = {"Exception": None, "AND": AndOperation, "OR": OrOperation}
 
     def __init__(
@@ -111,7 +112,9 @@ class QueryEngine:
                 "Range matching with [..] or {..} is not currently supported"
             )
 
-        elif not any(isinstance(root, t) for t in self.supported_ops):   # pragma: no cover
+        elif not any(
+            isinstance(root, t) for t in self.supported_ops
+        ):  # pragma: no cover
             raise QueryException(
                 "Unsupported operation type {}, please file a bug".format(str(root))
             )
@@ -137,26 +140,35 @@ class QueryEngine:
             Group: self._group,
             Word: self._bare_field,
             Phrase: self._bare_field,
+            Not: self._not,
         }
 
         handler_fn = op_map.get(type(operation), None)
 
-        if handler_fn is None:   # pragma: no cover
+        if handler_fn is None:  # pragma: no cover
             raise Exception("Unhandled operation type {}".format(str(type(operation))))
 
         result = handler_fn(data, operation)
         return result
 
+    @staticmethod
+    def _check_children(operation):
+        if len(operation.children) > 1:  # pragma: no cover
+            raise Exception(
+                "Unhandled operation with more than 1 child, please report a bug"
+            )
+
     def _group(self, data, operation):
         """
         This simply strips the Group object and passes the first child back to match.
         """
-        if len(operation.children) > 1:   # pragma: no cover
-            raise Exception(
-                "Unhandled Group with more than 1 child, please report a bug"
-            )
-
+        self._check_children(operation)
         return self._match(data, operation.children[0])
+
+    def _not(self, data, operation):
+        """ Invert a match to support the NOT syntax """
+        self._check_children(operation)
+        return not self._match(data, operation.children[0])
 
     def _and(self, data, operation):
         result = True
@@ -196,11 +208,7 @@ class QueryEngine:
         as a child.  Fuzzy() and Range() are not currently supported.
         """
 
-        if len(operation.children) > 1:   # pragma: no cover
-            raise Exception(
-                "Unhandled SearchField with more than 1 child, please report a bug"
-            )
-
+        self._check_children(operation)
         # logging.debug("Checking field %s against condition %s", op.name, op.expr)
 
         try:
@@ -218,9 +226,13 @@ class QueryEngine:
 
         if isinstance(match, Phrase):
             # Strip the quotes, first check these are always here
-            if match.value[0] != '"' or match.value[-1] != '"':   # pragma: no cover
+            if match.value[0] != '"' or match.value[-1] != '"':  # pragma: no cover
                 raise Exception(
                     "Expected Phrase to start and end with double quotes, please report a bug"
                 )
 
             return match.value[1:-1] in field
+
+        # This should not be possible due to previous checks, but added to ensure
+        # matching cannot silently fail.
+        raise Exception("Unhandled SearchField child")  # pragma: no cover

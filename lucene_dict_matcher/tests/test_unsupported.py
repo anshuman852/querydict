@@ -21,4 +21,6 @@ def test_fuzzy():
 
 def test_bare_field():
     with pytest.raises(NotImplementedError):
-        QueryEngine("value1", allow_bare_field=True).match(SIMPLE_DATA, default_field="key1")
+        QueryEngine("value1", allow_bare_field=True).match(
+            SIMPLE_DATA, default_field="key1"
+        )
