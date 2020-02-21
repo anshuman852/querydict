@@ -23,7 +23,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "Development Status :: 4 - Beta",
     ],
-    install_requires=["luqum", "dotty_dict",],
+    install_requires=["luqum", "dotty-dict",],
     test_suite='nose.collector',
     tests_require=['nose'],
 )
