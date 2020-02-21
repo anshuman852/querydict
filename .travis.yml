@@ -1,0 +1,4 @@
+language: python
+install:
+  - python setup.py -q install
+script: python setup.py test
