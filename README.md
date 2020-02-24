@@ -41,3 +41,12 @@ And grouping inside the query:
 Dependencies are automatically installed. Parsing of the Lucene query is handled by 
 [luqum](https://github.com/jurismarches/luqum). Easy access to dictionary keys is
 provided by [dotty-dict](https://pypi.org/project/dotty-dict/).
+
+# Todo
+
+* Implement support for different data types, e.g. integers and dates.
+* Consider how best to handle nested lists (arrays).
+* Implement range and fuzzy matching.
+* Implement regular expression support (similar to Elasticsearch queries).
+* Implement optional tokenisation for data fields, splitting up string data into multiple parts.
+* Rename the module, removing "lucene" as it's not a real Lucene implementation.  Maybe `querydict`.
