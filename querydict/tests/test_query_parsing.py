@@ -1,5 +1,5 @@
 import pytest
-from lucene_dict_matcher.parser import QueryEngine, QueryException
+from querydict.parser import QueryEngine, QueryException
 
 
 def test_none():

@@ -1,6 +1,6 @@
-# lucene-dict-matcher
+# querydict
 
-[![Build Status](https://travis-ci.org/edeca/lucene-dict-matcher.svg?branch=master)](https://travis-ci.org/edeca/lucene-dict-matcher)
+[![Build Status](https://travis-ci.org/edeca/querydict.svg?branch=master)](https://travis-ci.org/edeca/querydict)
 
 Easily match data in Python dictionaries against Lucene queries.
 

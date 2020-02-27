@@ -1,5 +1,5 @@
 import pytest
-from lucene_dict_matcher.parser import QueryEngine, MatchException
+from querydict.parser import QueryEngine, MatchException
 
 SIMPLE_DATA = {"key1": "value1", "key2": "value2"}
 COMPLEX_DATA = {"country": "England", "data": {"weather": "Rainy"}}

@@ -1,6 +1,13 @@
+"""Core implementation for querydict
+
+This module implements the core of querydict, in the QueryEngine class.
+"""
+
+from typing import Union, NoReturn
 from dotty_dict import dotty
 from luqum.parser import parser, ParseError
 from luqum.tree import (
+    Item,
     AndOperation,
     OrOperation,
     Group,
@@ -16,16 +23,29 @@ from luqum.utils import UnknownOperationResolver
 
 
 class QueryException(Exception):
+    """Exception raised when parsing a query string fails"""
+
     pass
 
 
 class MatchException(Exception):
+    """Exception raised when matching fails, for example if input data contains different type data to
+    the specified query.
+    """
+
     pass
 
 
 class QueryEngine:
     """
-    Match a Lucene query against dict data, using an abstract tree parser.
+    Match a Lucene style query against dict data, using an abstract tree parser.
+
+    Args:
+        query: A Lucene style query
+        short_circuit: Whether to terminate matching early inside AND or OR conditions (default: True)
+        ambiguous_action: The action to use for ambiguous queries, for example "field1:value1 field2:value2" (default: "AND")
+        allow_bare_field: Whether to allow a search term without a specified field, for example "value1".
+        max_depth: The maximum recursion depth when parsing a query (default: 10).
     """
 
     supported_ops = [AndOperation, OrOperation, Group, SearchField, Word, Phrase, Not]
@@ -33,11 +53,11 @@ class QueryEngine:
 
     def __init__(
         self,
-        query,
-        short_circuit=True,
-        ambiguous_action="AND",
-        allow_bare_field=False,
-        max_depth=10,
+        query: str,
+        short_circuit: bool = True,
+        ambiguous_action: str = "AND",
+        allow_bare_field: bool = False,
+        max_depth: int = 10,
     ):
         """
 
@@ -54,7 +74,7 @@ class QueryEngine:
         self._contains_bare_field = False
         self._parse_query(query, ambiguous_action)
 
-    def _parse_query(self, query, ambiguous_action):
+    def _parse_query(self, query: str, ambiguous_action: bool) -> None:
         """
         Parse the query, replace any ambiguous (unknown) parts with the correct operation
         and check for unsupported operations.
@@ -78,7 +98,7 @@ class QueryEngine:
         # Raise a QueryException if the user has passed unsupported search terms
         self._check_tree(self._tree)
 
-    def _check_tree(self, root, parent=None, depth=0):
+    def _check_tree(self, root: Item, parent: Item = None, depth: int = 0) -> None:
         """ Check for unsupported object types in the tree """
 
         depth += 1
@@ -122,7 +142,21 @@ class QueryEngine:
         for child in root.children:
             self._check_tree(child, root, depth)
 
-    def match(self, data, default_field=None):
+    def match(self, data: dict, default_field: str = None) -> bool:
+        """ Match a dictionary against the configured query.
+
+        Args:
+            data: A dictionary containing fields and values to match against.
+            default_field: The name of a field to use for unqualified values.
+
+        Returns:
+            True if there is a match, False otherwise
+
+        Raises:
+            MatchException: If there is a problem with the input data dictionary.
+        """
+        # The user can't pass a query like "field:foo and bar" without specifying which
+        # field to search for "bar".
         if self._contains_bare_field and default_field is None:
             raise MatchException(
                 "Need a default_field to use for matching unqualified field"
@@ -131,8 +165,18 @@ class QueryEngine:
         data = dotty(data)
         return self._match(data, self._tree)
 
-    def _match(self, data, operation):
+    def _match(self, data: dict, operation: Item) -> bool:
+        """ Internal method that recurses through the query AST to conduct matching.
 
+        Args:
+            data: A dictionary containing fields and values to match against.
+            operation: The current luqum.tree object which is being matched.
+
+        Returns:
+            True if the match succeeeds, False otherwise.
+        """
+
+        # This dictionary maps supported luqum classes to methods on this class
         op_map = {
             SearchField: self._search_field,
             AndOperation: self._and,
@@ -152,25 +196,57 @@ class QueryEngine:
         return result
 
     @staticmethod
-    def _check_children(operation):
+    def _check_children(operation: Item) -> None:
+        """ Check that a given luqum.tree object only has one child.
+
+        This is an internal sanity check to ensure that assumptions made in this module are correct.
+
+        Args:
+            operation: The luqum.tree object to check.
+        """
         if len(operation.children) > 1:  # pragma: no cover
             raise Exception(
                 "Unhandled operation with more than 1 child, please report a bug"
             )
 
-    def _group(self, data, operation):
-        """
-        This simply strips the Group object and passes the first child back to match.
+    def _group(self, data: dict, operation: Group) -> bool:
+        """ Match a Group object, by stripping it and calling _match() with the contents of the group.
+
+        Args:
+            data: A dictionary containing fields and values to match against.
+            operation: Instance of luqum.tree.Group describing the grouped operations.
+
+        Returns:
+            True if the group matches, False otherwise.
         """
         self._check_children(operation)
         return self._match(data, operation.children[0])
 
-    def _not(self, data, operation):
-        """ Invert a match to support the NOT syntax """
+    def _not(self, data: dict, operation: Not) -> bool:
+        """ Invert a match to support the "NOT" query syntax.
+
+        Args:
+            data: A dictionary containing fields and values to match against.
+            operation: Instance of luqum.tree.Not describing the operation to invert.
+
+        Returns:
+            The inverted result of _match().
+        """
         self._check_children(operation)
         return not self._match(data, operation.children[0])
 
-    def _and(self, data, operation):
+    def _and(self, data: dict, operation: AndOperation) -> bool:
+        """ Implement the AND operator.
+
+        This method will short circuit and return False instantly if any component fails to match.
+
+        Args:
+            data: A dictionary containing fields and values to match against.
+            operation: Instance of luqum.tree.AndOperation describing the operations to AND together.
+
+        Returns:
+            True if the query matches, False otherwise.
+        """
         result = True
 
         for child in operation.children:
@@ -183,7 +259,18 @@ class QueryEngine:
 
         return result
 
-    def _or(self, data, operation):
+    def _or(self, data: dict, operation: OrOperation) -> bool:
+        """ Implement the OR operator.
+
+        This method will short circuit and return True instantly if any component matches.
+
+        Args:
+            data: A dictionary containing fields and values to match against.
+            operation: Instance of luqum.tree.OrOperation describing the operations to OR together.
+
+        Returns:
+            True if the query matches, False otherwise.
+        """
         result = False
 
         for child in operation.children:
@@ -196,13 +283,15 @@ class QueryEngine:
 
         return result
 
-    def _bare_field(self, data, operation):
-        """
-        Process a
+    def _bare_field(self, data: dict, operation: Union[Word, Phrase]) -> NoReturn:
+        """ Match a Word or Phrase against the default field.
+
+        Raises:
+            NotImplementedError: This method needs to be implemented.
         """
         raise NotImplementedError("Unimplemented")
 
-    def _search_field(self, data, operation):
+    def _search_field(self, data: dict, operation: SearchField) -> bool:
         """
         Process a single SearchField object, which should have either a Word() or Phrase()
         as a child.  Fuzzy() and Range() are not currently supported.

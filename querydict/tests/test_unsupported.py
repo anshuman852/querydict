@@ -3,7 +3,7 @@ Test queries that aren't currently supported by this library, these are reminder
 for new features to add.
 """
 import pytest
-from lucene_dict_matcher.parser import QueryEngine, QueryException
+from querydict.parser import QueryEngine, QueryException
 
 # TODO: Move into a common test module to avoid duplication
 SIMPLE_DATA = {"key1": "value1", "key2": "value2"}

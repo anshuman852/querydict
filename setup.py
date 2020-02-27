@@ -1,11 +1,11 @@
 import setuptools
-from lucene_dict_matcher import VERSION_STRING
+from querydict import VERSION_STRING
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="lucene-dict-matcher",
+    name="querydict",
     version=VERSION_STRING,
     author="David Cannings",
     author_email="david@edeca.net",
@@ -13,7 +13,7 @@ setuptools.setup(
     license="GNU Affero General Public License v3",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/edeca/lucene-dict-matcher",
+    url="https://github.com/edeca/querydict",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
