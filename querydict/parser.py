@@ -1,6 +1,10 @@
-"""Core implementation for querydict
+"""
+This module implements the core of querydict, in the `QueryEngine` class. Sample usage:
 
-This module implements the core of querydict, in the QueryEngine class.
+    >>> from querydict.parser import QueryEngine
+    >>> data = { "name", "Bob" }
+    >>> query = QueryEngine("name:Bob")
+    >>> query.match("data")  # True
 """
 
 from typing import Union, NoReturn
@@ -23,14 +27,18 @@ from luqum.utils import UnknownOperationResolver
 
 
 class QueryException(Exception):
-    """Exception raised when parsing a query string fails"""
+    """
+    Exception raised when parsing a query string fails, for example if the query is invalid or uses unsupported
+    features.
+    """
 
     pass
 
 
 class MatchException(Exception):
-    """Exception raised when matching fails, for example if input data contains different type data to
-    the specified query.
+    """
+    Exception raised when matching fails, for example if input dictionary contains keys with the wrong data type
+    for the specified query.
     """
 
     pass
@@ -44,8 +52,11 @@ class QueryEngine:
         query: A Lucene style query
         short_circuit: Whether to terminate matching early inside AND or OR conditions (default: True)
         ambiguous_action: The action to use for ambiguous queries, for example "field1:value1 field2:value2" (default: "AND")
-        allow_bare_field: Whether to allow a search term without a specified field, for example "value1".
+        allow_bare_field: Whether to allow a search term without a specified field, for example "value1" (default: False).
         max_depth: The maximum recursion depth when parsing a query (default: 10).
+
+    Raises:
+        QueryException: If the input `query` is too complex, or uses unsupported features.
     """
 
     supported_ops = [AndOperation, OrOperation, Group, SearchField, Word, Phrase, Not]
@@ -78,6 +89,10 @@ class QueryEngine:
         """
         Parse the query, replace any ambiguous (unknown) parts with the correct operation
         and check for unsupported operations.
+
+        Args:
+            query: A Lucene style query.
+            ambiguous_action: The action to use for ambiguous queries, for example "field1:value1 field2:value2" (default: "AND")
         """
         if query is None or query.strip() == "":
             raise ValueError("Need a valid query")
@@ -99,7 +114,16 @@ class QueryEngine:
         self._check_tree(self._tree)
 
     def _check_tree(self, root: Item, parent: Item = None, depth: int = 0) -> None:
-        """ Check for unsupported object types in the tree """
+        """ Check for unsupported object types in the tree
+
+        Args:
+            root: The root tree item to check.
+            parent: The parent of the current root item, used to ensure certain fields are always contained in others.
+            depth: Current recursion depth, used to avoid infinite loops or malicious queries.
+
+        Raises:
+            QueryException: If a query is invalid, by being too complicated or containing unsupported features.
+        """
 
         depth += 1
         if depth > self.max_depth:
@@ -286,6 +310,10 @@ class QueryEngine:
     def _bare_field(self, data: dict, operation: Union[Word, Phrase]) -> NoReturn:
         """ Match a Word or Phrase against the default field.
 
+        Args:
+            data: A dictionary containing fields and values to match against.
+            operation: Instance of luqum.tree.Word or luqum.tree.Phrase.
+
         Raises:
             NotImplementedError: This method needs to be implemented.
         """
@@ -295,6 +323,13 @@ class QueryEngine:
         """
         Process a single SearchField object, which should have either a Word() or Phrase()
         as a child.  Fuzzy() and Range() are not currently supported.
+
+        Args:
+            data: A dictionary containing fields and values to match against.
+            operation: Instance of luqum.tree.SearchField which contains a child object to match.
+
+        Returns:
+            True if the query matches, False otherwise.
         """
 
         self._check_children(operation)

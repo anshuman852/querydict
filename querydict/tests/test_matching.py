@@ -1,3 +1,6 @@
+"""
+Tests for the matching engine, ensuring that combinations of query and data dictionary match correctly.
+"""
 import pytest
 from querydict.parser import QueryEngine, MatchException
 
@@ -21,6 +24,7 @@ def test_missing_nested():
 
 
 def test_simple_and():
+    """ Test that a simple AND query works """
     assert (
         QueryEngine("key1:value1 AND key2:value2", short_circuit=True).match(
             SIMPLE_DATA
@@ -46,6 +50,7 @@ def test_impossible_and():
 
 
 def test_simple_or():
+    """ Test that a simple OR query works """
     assert QueryEngine("key1:value1 OR key2:value2", short_circuit=True).match(
         SIMPLE_DATA
     )
@@ -55,12 +60,14 @@ def test_simple_or():
 
 
 def test_grouped_or():
+    """ Test a more complex OR that includes a grouped condition with nested fields """
     assert QueryEngine(
         "country:France OR (country:England AND data.weather:Rainy)"
     ).match(COMPLEX_DATA)
 
 
 def test_nested():
+    """ Test that nested dictionary fields match correctly """
     assert QueryEngine("country:England AND data.weather:Rainy").match(COMPLEX_DATA)
 
 
@@ -75,5 +82,6 @@ def test_not():
 
 
 def test_default_field():
+    """ Test that matching an unnamed field without passing the default key raises MatchException """
     with pytest.raises(MatchException):
         QueryEngine("foo", allow_bare_field=True).match(SIMPLE_DATA)

@@ -1,13 +1,18 @@
+"""
+Tests for the query parsing engine, ensuring that valid and invalid queries are handled appropriately.
+"""
 import pytest
 from querydict.parser import QueryEngine, QueryException
 
 
 def test_none():
+    """ Test that passing None raises a ValueError """
     with pytest.raises(ValueError):
         QueryEngine(None)
 
 
 def test_empty():
+    """ Test that empty queries, including whitespace, raise a ValueError """
     with pytest.raises(ValueError):
         QueryEngine("")
 
@@ -34,10 +39,13 @@ def test_max_depth():
 
 
 def test_basic():
+    """ Test a very basic query with a Word in a single field """
     QueryEngine("key:value")
 
 
 def test_ambiguous():
+    """ Test queries that lack AND/OR so are ambiguous """
+
     # This should work, the default action is to replace with AND
     QueryEngine("key:value oops:ambiguous")
 
@@ -46,6 +54,7 @@ def test_ambiguous():
 
 
 def test_bare_field():
+    """ Test that values without a field name are handled correctly """
     QueryEngine("value", allow_bare_field=True)
 
     with pytest.raises(QueryException):
