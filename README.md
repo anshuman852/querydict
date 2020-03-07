@@ -1,8 +1,9 @@
 # querydict
 
 [![Build Status](https://travis-ci.org/edeca/querydict.svg?branch=master)](https://travis-ci.org/edeca/querydict)
+[![Docs Status](https://readthedocs.org/projects/querydict/badge/?version=latest&style=flat)](https://querydict.readthedocs.io)
 
-Easily match data in Python dictionaries against Lucene queries.
+Easily match data in Python dictionaries against Lucene queries. See the [full documentation](https://querydict.readthedocs.io) on Read the Docs.
 
 This library takes a Lucene syntax query and matches against Python dictionaries, returning `True` or `False`.
 It is designed to allow selection of records that match user queries, for example in a streaming system where
