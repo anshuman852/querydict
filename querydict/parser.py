@@ -9,7 +9,8 @@ This module implements the core of querydict, in the `QueryEngine` class. Sample
 
 from typing import Union, NoReturn
 from dotty_dict import dotty
-from luqum.parser import parser, ParseError
+from luqum.parser import parser
+from luqum.exceptions import ParseError
 from luqum.tree import (
     Item,
     AndOperation,
